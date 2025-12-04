@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>#Hkk — คุณเป็นโยไคแบบไหน</title>
+<style>
+    body {
+        background: #0d0d0d;
+        color: #ffffff;
+        font-family: "Prompt", sans-serif;
+        text-align: center;
+        padding: 20px;
+    }
+
+    h1 {
+        color: #ff2b2b;
+        margin-bottom: 10px;
+        text-shadow: 0 0 10px #ff2b2b;
+    }
+
+    .box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid #ff2b2b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px auto;
+        max-width: 600px;
+    }
+
+    button {
+        background: #ff2b2b;
+        color: #fff;
+        border: none;
+        padding: 12px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px;
+        width: 80%;
+        transition: 0.15s;
+    }
+    button:hover {
+        background: #ff4444;
+        transform: scale(1.03);
+    }
+
+    .result {
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid #ff2b2b;
+        border-radius: 12px;
+        display: none;
+    }
+
+    .credit {
+        margin-top: 40px;
+        font-size: 14px;
+        opacity: 0.6;
+    }
+</style>
+</head>
+<body>
+
+<h1>🔴⚫⚪ #Hkk — คุณเป็นโยไคแบบไหน?</h1>
+
+<div id="quiz" class="box">
+    <h2>ตอบคำถามต่อไปนี้ เพื่อค้นหาโยไคประจำตัวคุณ</h2>
+
+    <div id="question"></div>
+    <div id="options"></div>
+</div>
+
+<div id="result" class="result"></div>
+
+<div class="credit">
+    ออกแบบโดย <b>lullmorien</b>
+</div>
+
+<script>
+// เสียงคลิก (Base64)
+const clickSound = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
+clickSound.volume = 0.35; // ปรับความดังได้
+
+const questions = [
+    {
+        q: "ถ้าได้ยินเสียงแปลก ๆ ตอนกลางคืน คุณจะทำอย่างไร?",
+        o: ["รีบเดินออกจากบริเวณทันที", "เดินไปดูอย่างระมัดระวัง", "เปิดไฟให้สว่างก่อน", "อัดคลิปไว้ก่อน"]
+    },
+    {
+        q: "ถ้าเพื่อนชวนไปที่หลอน ๆ",
+        o: ["ขอผ่านก่อนนะ", "ไปแต่ขออยู่ตรงกลาง", "ไปอย่างมั่นใจ", "ไปเพื่อแกล้งเพื่อนกลับ"]
+    },
+    {
+        q: "ถ้ามีเหตุคับขันเกิดขึ้น",
+        o: ["หาทางถอยก่อน", "คิดวิเคราะห์ทันที", "ฮึบสู้ไว้ก่อน", "เผลอใช้อารมณ์ก่อน"]
+    },
+    {
+        q: "ถ้ามีคนแปลกหน้ามาขอความช่วยเหลือ",
+        o: ["ช่วยแต่ยังกลัว", "ช่วยแบบระวัง", "ช่วยทันที", "แซวเล่นก่อนแล้วค่อยช่วย"]
+    },
+    {
+        q: "ถ้าเพื่อนงอนคุณ",
+        o: ["รีบขอโทษ", "คุยด้วยเหตุผล", "กอดปลอบก่อน", "ทำให้ยิ้มก่อนค่อยขอโทษ"]
+    }
+];
+
+const yokai = [
+    { name: "⚪ โยไคขี้กลัว", desc: "ใจดี อ่อนโยน ระวังตัวเก่ง แต่รักคนรอบข้างมาก" },
+    { name: "🔴 โยไคเจ้าเล่ห์", desc: "ฉลาด ขี้แกล้ง แถมมีเสน่ห์แบบไม่น้อยหน้าใคร" },
+    { name: "⚫ โยไคผู้กล้า", desc: "เข้มแข็ง มั่นใจ เป็นที่พึ่งที่ดีให้ทุกคน" },
+    { name: "⚪🔴 โยไคติ๊งต๊อง", desc: "สดใส คาดเดายาก ทำให้บรรยากาศไม่เครียด" },
+    { name: "🔴⚫ โยไคอบอุ่น", desc: "ใจดี สุภาพ น่าไว้ใจ เข้าหาได้ง่าย" }
+];
+
+let step = 0;
+let score = [0,0,0,0,0];
+
+function loadQuestion() {
+    document.getElementById("question").innerHTML = `<h3>${questions[step].q}</h3>`;
+    document.getElementById("options").innerHTML = "";
+
+    questions[step].o.forEach((opt, i) => {
+        const btn = document.createElement("button");
+        btn.innerText = opt;
+        btn.onclick = () => next(i);
+        document.getElementById("options").appendChild(btn);
+    });
+}
+
+function next(choice) {
+    clickSound.currentTime = 0;
+    clickSound.play();
+
+    score[choice]++;
+
+    step++;
+    if(step < questions.length){
+        loadQuestion();
+    } else {
+        showResult();
+    }
+}
+
+function showResult(){
+    document.getElementById("quiz").style.display = "none";
+    const maxIndex = score.indexOf(Math.max(...score));
+
+    const r = yokai[maxIndex];
+    document.getElementById("result").style.display = "block";
+    document.getElementById("result").innerHTML = `
+        <h2>${r.name}</h2>
+        <p>${r.desc}</p>
+    `;
+}
+
+loadQuestion();
+</script>
+
+</body>
+  </html>
